@@ -53,7 +53,7 @@ export const stockTool = tool({
     },
 });
 
-// F1 Tool - Uses Ergast Developer API (free)
+// F1 Tool - Uses OpenF1 API
 export const f1Tool = tool({
     description: "Get the next upcoming Formula 1 race",
     parameters: z.object({
@@ -61,38 +61,45 @@ export const f1Tool = tool({
     }),
     execute: async () => {
         try {
-            const response = await fetch(`https://ergast.com/api/f1/current.json`);
+            // Get current year dynamically
+            const currentYear = new Date().getFullYear();
+
+            // Fetch F1 calendar from OpenF1 API for current year
+            const response = await fetch(`https://api.openf1.org/v1/meetings?year=${currentYear}`);
             if (!response.ok) throw new Error("Failed to fetch F1 data");
-            const data = await response.json();
-            const races = data.MRData.RaceTable.Races;
 
-            if (!races || races.length === 0) {
-                throw new Error("No races found");
-            }
-
+            const meetings = await response.json();
             const now = new Date();
-            const nextRace = races.find((race: any) => {
-                const raceDate = new Date(`${race.date}T${race.time || "00:00:00Z"}`);
-                return raceDate > now;
+
+            // Find the next upcoming race
+            const nextRace = meetings.find((meeting: any) => {
+                const raceEnd = new Date(meeting.date_end);
+                return raceEnd > now;
             });
 
             if (!nextRace) {
-                const lastRace = races[races.length - 1];
                 return {
                     raceName: "Season Complete",
-                    circuit: lastRace.Circuit.circuitName,
-                    date: lastRace.date,
+                    circuit: `${currentYear} F1 Season has ended`,
+                    date: `Check back for ${currentYear + 1} calendar`,
                     time: "N/A",
                 };
             }
 
+            // Format the date nicely
+            const raceStart = new Date(nextRace.date_start);
+            const raceEnd = new Date(nextRace.date_end);
+            const dateOptions: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+            const formattedDate = `${raceStart.toLocaleDateString('en-US', dateOptions)} - ${raceEnd.toLocaleDateString('en-US', dateOptions)}`;
+
             return {
-                raceName: nextRace.raceName,
-                circuit: nextRace.Circuit.circuitName,
-                date: nextRace.date,
-                time: nextRace.time || "TBA",
+                raceName: nextRace.meeting_name,
+                circuit: `${nextRace.circuit_short_name}, ${nextRace.location}`,
+                date: formattedDate,
+                time: `${nextRace.country_name} 🇫🇲`,
             };
         } catch (e) {
+            console.error("F1 API Error:", e);
             return {
                 raceName: "Unknown Race",
                 circuit: "API Error",
