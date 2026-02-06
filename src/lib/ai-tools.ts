@@ -48,12 +48,13 @@ export const stockTool = tool({
                 change: quote["10. change percent"],
             };
         } catch (e) {
-            return { symbol: symbol.toUpperCase(), price: 0, change: "N/A (Rate Limit or Invalid)" };
+            return { symbol: symbol.toUpperCase(), price: 0, change: "N/A" };
         }
     },
 });
 
-// F1 Tool - Uses OpenF1 API
+
+// F1 Tool - Uses OpenF1 API (free, no API key required)
 export const f1Tool = tool({
     description: "Get the next upcoming Formula 1 race",
     parameters: z.object({
@@ -89,14 +90,19 @@ export const f1Tool = tool({
             // Format the date nicely
             const raceStart = new Date(nextRace.date_start);
             const raceEnd = new Date(nextRace.date_end);
-            const dateOptions: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+            const dateOptions: Intl.DateTimeFormatOptions = {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            };
             const formattedDate = `${raceStart.toLocaleDateString('en-US', dateOptions)} - ${raceEnd.toLocaleDateString('en-US', dateOptions)}`;
 
             return {
                 raceName: nextRace.meeting_name,
                 circuit: `${nextRace.circuit_short_name}, ${nextRace.location}`,
                 date: formattedDate,
-                time: `${nextRace.country_name} 🇫🇲`,
+                time: nextRace.country_name,
             };
         } catch (e) {
             console.error("F1 API Error:", e);

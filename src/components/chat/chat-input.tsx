@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useEffect, ChangeEvent } from "react";
-import { Button } from "@/components/ui/button";
 
 interface ChatInputProps {
     value?: string;
@@ -33,7 +32,6 @@ export function ChatInput({
     function handleKeyDown(e: React.KeyboardEvent) {
         if (e.key === "Enter" && !e.shiftKey) {
             e.preventDefault();
-            // Submit the form
             const form = e.currentTarget.closest("form");
             if (form) {
                 form.requestSubmit();
@@ -42,8 +40,8 @@ export function ChatInput({
     }
 
     return (
-        <div className="flex items-end gap-2 p-4 bg-slate-900 border-t border-slate-800">
-            <div className="flex-1 relative">
+        <div className="flex items-end gap-2 p-4 bg-neutral-900 border-t border-neutral-800">
+            <div className="flex-1">
                 <textarea
                     ref={textareaRef}
                     value={value}
@@ -52,32 +50,22 @@ export function ChatInput({
                     placeholder={placeholder}
                     disabled={isLoading}
                     rows={1}
-                    className="w-full resize-none rounded-xl bg-slate-800 border border-slate-700 px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full resize-none rounded-lg border border-neutral-700 px-4 py-3 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 bg-neutral-800"
                 />
             </div>
-            <Button
+            <button
                 type="submit"
                 disabled={!value?.trim() || isLoading}
-                className="h-12 w-12 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-11 w-11 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
                 {isLoading ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
+                    <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
                 ) : (
-                    <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                    >
-                        <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                        />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                     </svg>
                 )}
-            </Button>
+            </button>
         </div>
     );
 }

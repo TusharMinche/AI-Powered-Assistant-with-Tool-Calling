@@ -25,6 +25,7 @@ export default async function ChatConversationPage({
     const initialMessages = conversation.messages.map((m) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
+        toolInvocations: (m.toolCalls as any) || undefined,
     }));
 
     return <ChatInterface conversationId={id} initialMessages={initialMessages} />;

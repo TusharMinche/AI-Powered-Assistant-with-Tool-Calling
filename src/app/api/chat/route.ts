@@ -21,6 +21,12 @@ export async function POST(req: Request) {
 
         const result = streamText({
             model: groq("llama-3.3-70b-versatile"),
+            system: `You are a helpful AI assistant. You have access to tools for weather, stock prices, and F1 race information.
+IMPORTANT: Only use ONE tool that is directly relevant to the user's question. Do NOT call multiple tools unless the user explicitly asks for multiple things in the same message.
+- If user asks about weather, only use the weather tool
+- If user asks about stocks, only use the stock tool  
+- If user asks about F1 races, only use the F1 tool
+If a tool returns an error or empty result, respond with a helpful text message explaining the issue.`,
             messages,
             tools: {
                 getWeather: weatherTool,

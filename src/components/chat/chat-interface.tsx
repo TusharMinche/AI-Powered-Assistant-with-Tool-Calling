@@ -5,8 +5,6 @@ import { WeatherCard, StockCard, F1Card } from "@/components/chat/tool-cards";
 import { ChatInput } from "./chat-input";
 import { saveMessage } from "@/app/actions/messages";
 import { updateConversationTitle } from "@/app/actions/conversation";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface ToolInvocation {
     toolCallId: string;
@@ -25,7 +23,7 @@ interface Message {
 
 interface ChatInterfaceProps {
     conversationId: string;
-    initialMessages?: { role: "user" | "assistant"; content: string }[];
+    initialMessages?: { role: "user" | "assistant"; content: string; toolInvocations?: ToolInvocation[] }[];
 }
 
 export function ChatInterface({
@@ -37,6 +35,7 @@ export function ChatInterface({
             id: `initial-${i}`,
             role: m.role,
             content: m.content,
+            toolInvocations: m.toolInvocations,
         }))
     );
     const [inputValue, setInputValue] = useState("");
@@ -44,7 +43,6 @@ export function ChatInterface({
     const scrollRef = useRef<HTMLDivElement>(null);
     const titleUpdatedRef = useRef(initialMessages.length > 0);
 
-    // Auto-scroll to bottom
     useEffect(() => {
         scrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
@@ -60,52 +58,43 @@ export function ChatInterface({
             content: trimmedInput,
         };
 
-        // Update title on first message
-        if (!titleUpdatedRef.current) {
-            const title = trimmedInput.slice(0, 50) + (trimmedInput.length > 50 ? "..." : "");
-            updateConversationTitle(conversationId, title);
-            titleUpdatedRef.current = true;
-        }
+        setMessages((prev) => [...prev, userMessage]);
+        setInputValue("");
+        setIsLoading(true);
 
-        // Save user message to database
         saveMessage({
             conversationId,
             role: "user",
             content: trimmedInput,
         });
 
-        const updatedMessages = [...messages, userMessage];
-        setMessages(updatedMessages);
-        setInputValue("");
-        setIsLoading(true);
+        if (!titleUpdatedRef.current) {
+            const title = trimmedInput.slice(0, 50) + (trimmedInput.length > 50 ? "..." : "");
+            updateConversationTitle(conversationId, title);
+            titleUpdatedRef.current = true;
+        }
+
+        const assistantId = crypto.randomUUID();
+        setMessages((prev) => [...prev, { id: assistantId, role: "assistant", content: "" }]);
 
         try {
             const response = await fetch("/api/chat", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    messages: updatedMessages.map((m) => ({
+                    messages: [...messages, userMessage].map((m) => ({
                         role: m.role,
                         content: m.content,
                     })),
                 }),
             });
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) throw new Error("Failed to send message");
 
             const reader = response.body?.getReader();
+            if (!reader) throw new Error("No reader");
+
             const decoder = new TextDecoder();
-            if (!reader) throw new Error("No response body");
-
-            const assistantMessage: Message = {
-                id: crypto.randomUUID(),
-                role: "assistant",
-                content: "",
-                toolInvocations: [],
-            };
-
-            setMessages((prev) => [...prev, assistantMessage]);
-
             let fullContent = "";
             let currentToolInvocations: ToolInvocation[] = [];
 
@@ -117,7 +106,6 @@ export function ChatInterface({
                 const lines = chunk.split("\n").filter((line) => line.trim());
 
                 for (const line of lines) {
-                    // Text content (AI SDK v4 format: "0:" prefix)
                     if (line.startsWith("0:")) {
                         try {
                             const text = JSON.parse(line.slice(2));
@@ -132,30 +120,32 @@ export function ChatInterface({
                             });
                         } catch (e) { }
                     }
-                    // Tool call start (AI SDK v4 format: "9:" prefix)
                     else if (line.startsWith("9:")) {
                         try {
                             const toolData = JSON.parse(line.slice(2));
                             if (toolData.toolCallId) {
-                                const toolInvocation: ToolInvocation = {
-                                    toolCallId: toolData.toolCallId,
-                                    toolName: toolData.toolName,
-                                    args: toolData.args || {},
-                                    state: "pending",
-                                };
-                                currentToolInvocations = [...currentToolInvocations, toolInvocation];
-                                setMessages((prev) => {
-                                    const updated = [...prev];
-                                    const lastMsg = updated[updated.length - 1];
-                                    if (lastMsg?.role === "assistant") {
-                                        lastMsg.toolInvocations = currentToolInvocations;
-                                    }
-                                    return updated;
-                                });
+                                const existsById = currentToolInvocations.some(t => t.toolCallId === toolData.toolCallId);
+                                const existsByName = currentToolInvocations.some(t => t.toolName === toolData.toolName);
+                                if (!existsById && !existsByName) {
+                                    const toolInvocation: ToolInvocation = {
+                                        toolCallId: toolData.toolCallId,
+                                        toolName: toolData.toolName,
+                                        args: toolData.args || {},
+                                        state: "pending",
+                                    };
+                                    currentToolInvocations = [...currentToolInvocations, toolInvocation];
+                                    setMessages((prev) => {
+                                        const updated = [...prev];
+                                        const lastMsg = updated[updated.length - 1];
+                                        if (lastMsg?.role === "assistant") {
+                                            lastMsg.toolInvocations = [...currentToolInvocations];
+                                        }
+                                        return updated;
+                                    });
+                                }
                             }
                         } catch (e) { }
                     }
-                    // Tool result (AI SDK v4 format: "a:" prefix)
                     else if (line.startsWith("a:")) {
                         try {
                             const resultData = JSON.parse(line.slice(2));
@@ -179,12 +169,12 @@ export function ChatInterface({
                 }
             }
 
-            // Save assistant message to database (only once, after streaming is done)
-            if (fullContent.trim()) {
+            if (fullContent.trim() || currentToolInvocations.length > 0) {
                 saveMessage({
                     conversationId,
                     role: "assistant",
                     content: fullContent,
+                    toolCalls: currentToolInvocations.length > 0 ? currentToolInvocations : undefined,
                 });
             }
         } catch (err) {
@@ -196,25 +186,23 @@ export function ChatInterface({
     };
 
     return (
-        <div className="flex flex-col h-full bg-slate-950">
+        <div className="flex flex-col h-full bg-neutral-950">
             {/* Messages */}
-            <ScrollArea className="flex-1 px-4">
-                <div className="max-w-3xl mx-auto py-6 space-y-6">
+            <div className="flex-1 overflow-y-auto px-4">
+                <div className="max-w-2xl mx-auto py-6 space-y-4">
                     {/* Empty state */}
                     {messages.length === 0 && (
-                        <div className="flex-1 flex items-center justify-center pt-20">
+                        <div className="flex items-center justify-center pt-20">
                             <div className="text-center">
-                                <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center">
-                                    <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                                    </svg>
-                                </div>
-                                <h2 className="text-2xl font-bold text-white mb-2">How can I help you today?</h2>
-                                <p className="text-slate-400 max-w-md">Ask me about the weather, upcoming F1 races, or stock prices. I can fetch real-time information for you!</p>
-                                <div className="flex flex-wrap justify-center gap-2 mt-6">
-                                    <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-sm">🌤️ Weather</span>
-                                    <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-sm">🏎️ F1 Races</span>
-                                    <span className="px-3 py-1 bg-slate-800 text-slate-300 rounded-full text-sm">📈 Stock Prices</span>
+                                <div className="text-4xl mb-4">🤖</div>
+                                <h2 className="text-xl font-medium text-neutral-200 mb-2">Start a conversation</h2>
+                                <p className="text-neutral-500 text-sm max-w-sm">
+                                    Ask me about weather, stock prices, or F1 races.
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-2 mt-4">
+                                    <span className="px-3 py-1 bg-neutral-800 text-neutral-400 rounded text-sm">Weather</span>
+                                    <span className="px-3 py-1 bg-neutral-800 text-neutral-400 rounded text-sm">Stocks</span>
+                                    <span className="px-3 py-1 bg-neutral-800 text-neutral-400 rounded text-sm">F1</span>
                                 </div>
                             </div>
                         </div>
@@ -229,42 +217,30 @@ export function ChatInterface({
 
                         if (m.role === "user") {
                             return (
-                                <div key={m.id} className="flex gap-4 flex-row-reverse">
-                                    <Avatar className="h-8 w-8 shrink-0">
-                                        <AvatarFallback className="bg-purple-600 text-white">U</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 text-right">
-                                        <div className="inline-block px-4 py-3 rounded-2xl bg-purple-600 text-white">
-                                            <div className="prose prose-invert prose-sm max-w-none whitespace-pre-wrap">{m.content}</div>
-                                        </div>
+                                <div key={m.id} className="flex justify-end">
+                                    <div className="max-w-[80%] px-4 py-2 rounded-lg bg-blue-600 text-white">
+                                        <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                                     </div>
                                 </div>
                             );
                         }
 
-                        // Assistant message
                         return (
-                            <div key={m.id} className="flex gap-4">
-                                <Avatar className="h-8 w-8 shrink-0">
-                                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">AI</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                    {/* Text content */}
+                            <div key={m.id} className="flex justify-start">
+                                <div className="max-w-[80%]">
                                     {hasText && (
-                                        <div className="inline-block px-4 py-3 rounded-2xl bg-slate-800 text-slate-100">
-                                            <div className="prose prose-invert prose-sm max-w-none whitespace-pre-wrap">{m.content}</div>
+                                        <div className="px-4 py-2 rounded-lg bg-neutral-800 text-neutral-200">
+                                            <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                                         </div>
                                     )}
 
-                                    {/* Pending tools - loading state */}
                                     {pendingTools.map((invocation) => (
-                                        <div key={invocation.toolCallId} className="mt-2 flex items-center gap-2 text-slate-400 text-sm">
-                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500" />
-                                            Running {invocation.toolName}...
+                                        <div key={invocation.toolCallId} className="mt-2 flex items-center gap-2 text-neutral-500 text-sm">
+                                            <div className="animate-spin h-3 w-3 border-2 border-neutral-500 border-t-transparent rounded-full" />
+                                            Loading...
                                         </div>
                                     ))}
 
-                                    {/* Completed tool cards */}
                                     {completedTools.map((invocation) => {
                                         if (invocation.toolName === "getWeather") {
                                             return <WeatherCard key={invocation.toolCallId} data={invocation.result} />;
@@ -282,17 +258,13 @@ export function ChatInterface({
                         );
                     })}
 
-                    {/* Loading indicator */}
                     {isLoading && messages[messages.length - 1]?.role === "user" && (
-                        <div className="flex gap-4">
-                            <Avatar className="h-8 w-8 shrink-0">
-                                <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white">AI</AvatarFallback>
-                            </Avatar>
-                            <div className="bg-slate-800 rounded-2xl px-4 py-3">
+                        <div className="flex justify-start">
+                            <div className="px-4 py-2 bg-neutral-800 rounded-lg">
                                 <div className="flex gap-1">
-                                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" />
-                                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
-                                    <span className="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                                    <span className="w-2 h-2 bg-neutral-500 rounded-full animate-bounce" />
+                                    <span className="w-2 h-2 bg-neutral-500 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
+                                    <span className="w-2 h-2 bg-neutral-500 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
                                 </div>
                             </div>
                         </div>
@@ -300,7 +272,7 @@ export function ChatInterface({
 
                     <div ref={scrollRef} />
                 </div>
-            </ScrollArea>
+            </div>
 
             {/* Input */}
             <form onSubmit={handleSubmit}>
