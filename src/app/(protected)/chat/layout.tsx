@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { ChatSidebar } from "@/components/chat/chat-sidebar";
+import ChatLayoutClient from "@/components/chat/chat-layout-client";
 
 export default async function ChatLayout({
     children,
@@ -12,10 +12,5 @@ export default async function ChatLayout({
         redirect("/login");
     }
 
-    return (
-        <div className="flex h-screen bg-slate-950">
-            <ChatSidebar />
-            <main className="flex-1 flex flex-col overflow-hidden">{children}</main>
-        </div>
-    );
+    return <ChatLayoutClient>{children}</ChatLayoutClient>;
 }

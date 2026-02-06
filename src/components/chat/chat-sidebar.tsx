@@ -10,9 +10,10 @@ import type { Conversation } from "@/db/schema";
 
 interface ChatSidebarProps {
     currentConversationId?: string;
+    onClose?: () => void;
 }
 
-export function ChatSidebar({ currentConversationId }: ChatSidebarProps) {
+export function ChatSidebar({ currentConversationId, onClose }: ChatSidebarProps) {
     const router = useRouter();
     const pathname = usePathname();
     const { data: session } = useSession();
@@ -47,9 +48,10 @@ export function ChatSidebar({ currentConversationId }: ChatSidebarProps) {
         try {
             const result = await createConversation();
             if (result?.id) {
-                await loadConversations();
+                // Navigate first, then reload in background
                 router.push(`/chat/${result.id}`);
-                router.refresh();
+                onClose?.();
+                loadConversations(); // Don't await - let it run in background
             }
         } catch (error) {
             console.error("Failed to create conversation:", error);
@@ -75,7 +77,19 @@ export function ChatSidebar({ currentConversationId }: ChatSidebarProps) {
         <div className="flex flex-col h-full bg-neutral-900 border-r border-neutral-800 w-64">
             {/* Header */}
             <div className="p-4 border-b border-neutral-800">
-                <h1 className="text-lg font-semibold text-neutral-100 mb-3">AI Chat</h1>
+                <div className="flex items-center justify-between mb-3">
+                    <h1 className="text-lg font-semibold text-neutral-100">AI Chat</h1>
+                    {onClose && (
+                        <button
+                            onClick={onClose}
+                            className="md:hidden p-1 text-neutral-400 hover:text-neutral-200"
+                        >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    )}
+                </div>
                 <Button
                     onClick={handleNewChat}
                     disabled={isCreatingChat}
@@ -121,6 +135,7 @@ export function ChatSidebar({ currentConversationId }: ChatSidebarProps) {
                                         if (currentConversationId === conversation.id) return;
                                         setNavigatingTo(conversation.id);
                                         router.push(`/chat/${conversation.id}`);
+                                        onClose?.();
                                     }}
                                     className={`group flex items-center justify-between px-3 py-2 rounded cursor-pointer text-sm ${currentConversationId === conversation.id || pathname === `/chat/${conversation.id}`
                                         ? "bg-neutral-800 text-neutral-100"
