@@ -22,7 +22,7 @@ export async function createConversation(title?: string) {
         updatedAt: now,
     });
 
-    revalidatePath("/chat");
+    // Don't revalidatePath here - we use optimistic updates in the UI
     return { id };
 }
 
