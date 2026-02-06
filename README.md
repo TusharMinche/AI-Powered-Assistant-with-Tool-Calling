@@ -1,126 +1,145 @@
-# 🤖 AI-Powered Assistant with Tool Calling
+# 🤖 AI-Powered Chat Assistant
 
-A full-stack AI chatbot built with Next.js 16, featuring real-time streaming responses and AI tool calling for weather, stocks, and F1 race information.
+An intelligent chat assistant with tool calling capabilities, built with Next.js 15, featuring real-time weather, stock prices, and F1 race information.
 
-![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=flat-square&logo=next.js)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-38B2AC?style=flat-square&logo=tailwind-css)
+![AI Assistant Preview](https://img.shields.io/badge/Next.js-15-black) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue) ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38bdf8)
 
 ## ✨ Features
 
-### 🔐 Authentication
-- **Google OAuth** - Sign in with Google
-- **GitHub OAuth** - Sign in with GitHub
-- **Protected Routes** - Middleware-based route protection
+- 🌤️ **Weather Information** - Get real-time weather for any city
+- 📈 **Stock Prices** - Check live stock prices and changes
+- 🏎️ **F1 Race Schedule** - Find upcoming Formula 1 race details
+- 💬 **Chat History** - Persistent conversations with full history
+- 🔐 **Authentication** - Google & GitHub OAuth login
+- 📱 **Responsive Design** - Works on desktop, tablet, and mobile
+- 🌙 **Dark Theme** - Beautiful dark UI
 
-### 💬 AI Chat
-- **GROQ AI** - Lightning-fast LLM responses (Llama 3.3 70B)
-- **Streaming Responses** - Real-time text streaming with Vercel AI SDK
-- **Chat History** - Persistent conversations stored in PostgreSQL
-- **Tool Calling** - AI can call external APIs for real-time data
+## 🛠️ Tech Stack
 
-### 🛠️ AI Tools
-| Tool | API | Description |
-|------|-----|-------------|
-| 🌤️ Weather | OpenWeatherMap | Get current weather for any city |
-| 📈 Stocks | Alpha Vantage | Get real-time stock prices |
-| 🏎️ F1 Races | OpenF1 | Get next Formula 1 race info |
+| Technology | Purpose |
+|------------|---------|
+| Next.js 15 | React Framework |
+| TypeScript | Type Safety |
+| Tailwind CSS | Styling |
+| Drizzle ORM | Database |
+| Neon PostgreSQL | Database Hosting |
+| NextAuth.js | Authentication |
+| Vercel AI SDK | AI Tool Calling |
+| Groq API | LLM Provider |
 
-### 🎨 UI/UX
-- **Dark Theme** - Beautiful dark mode interface
-- **Tool Cards** - Gradient-styled cards for each tool result
-- **Responsive Design** - Works on desktop and mobile
-- **Loading States** - Smooth loading animations
+## 📸 Screenshots
 
-## 🚀 Tech Stack
+### Desktop View
+```
+┌─────────────────────────────────────────────────────────┐
+│ AI Chat          │                                      │
+│ ┌──────────────┐ │  ┌──────────────────────────────┐   │
+│ │ + New Chat   │ │  │        Weather in Pune        │   │
+│ └──────────────┘ │  │           28°C                │   │
+│                  │  │           Clear               │   │
+│ HISTORY          │  └──────────────────────────────┘   │
+│ • Stock of AAPL  │                                      │
+│ • Weather Delhi  │  ┌──────────────────────────────┐   │
+│ • Next F1 Race   │  │   Type your message...   [→] │   │
+│                  │  └──────────────────────────────┘   │
+└─────────────────────────────────────────────────────────┘
+```
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS 4 + shadcn/ui
-- **Database**: Neon PostgreSQL + Drizzle ORM
-- **Auth**: NextAuth.js v5 (Auth.js)
-- **AI**: Vercel AI SDK + GROQ
+### Mobile View
+- Collapsible sidebar with hamburger menu
+- Full-screen chat experience
+- Touch-friendly interface
 
-## 📦 Installation
+## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+
-- npm or pnpm
-- Neon Database account
-- API keys (see below)
+- npm or yarn
+- PostgreSQL database (Neon recommended)
 
-### 1. Clone the repository
-```bash
-git clone <repository-url>
-cd ai-assistant
-```
+### Installation
 
-### 2. Install dependencies
-```bash
-npm install
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/TusharMinche/AI-Powered-Assistant-with-Tool-Calling.git
+   cd ai-assistant
+   ```
 
-### 3. Set up environment variables
-Create a `.env.local` file:
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   ```
+
+4. **Configure your `.env.local`** (see Environment Variables section below)
+
+5. **Push database schema**
+   ```bash
+   npx drizzle-kit push
+   ```
+
+6. **Run the development server**
+   ```bash
+   npm run dev
+   ```
+
+7. **Open** [http://localhost:3000](http://localhost:3000)
+
+## 🔐 Environment Variables
+
+Create a `.env.local` file with the following variables:
+
 ```env
-# Database
-DATABASE_URL="postgresql://..."
+# Database (Neon PostgreSQL)
+DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
 
-# Auth
-AUTH_SECRET="your-auth-secret"
+# Authentication
+AUTH_SECRET="your-random-secret-key"  # Generate with: openssl rand -base64 32
+AUTH_TRUST_HOST=true
+
+# Google OAuth
 AUTH_GOOGLE_ID="your-google-client-id"
 AUTH_GOOGLE_SECRET="your-google-client-secret"
+
+# GitHub OAuth
 AUTH_GITHUB_ID="your-github-client-id"
 AUTH_GITHUB_SECRET="your-github-client-secret"
 
-# AI
+# API Keys
 GROQ_API_KEY="your-groq-api-key"
-
-# Tools
-OPENWEATHERMAP_API_KEY="your-openweathermap-key"
-ALPHA_VANTAGE_API_KEY="your-alpha-vantage-key"
+OPENWEATHERMAP_API_KEY="your-openweathermap-api-key"
+ALPHA_VANTAGE_API_KEY="your-alpha-vantage-api-key"
 ```
 
-### 4. Set up the database
-```bash
-npm run db:push
-```
+### Getting API Keys
 
-### 5. Run the development server
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to see the app.
-
-## 🔑 Getting API Keys
-
-| Service | URL | Notes |
-|---------|-----|-------|
-| GROQ | [console.groq.com](https://console.groq.com) | Free tier available |
-| OpenWeatherMap | [openweathermap.org/api](https://openweathermap.org/api) | Free tier |
-| Alpha Vantage | [alphavantage.co](https://www.alphavantage.co/support/#api-key) | Free tier (5 calls/min) |
-| Google OAuth | [console.cloud.google.com](https://console.cloud.google.com) | Create credentials |
-| GitHub OAuth | [github.com/settings/developers](https://github.com/settings/developers) | Create OAuth app |
+| Service | Link |
+|---------|------|
+| Neon Database | [neon.tech](https://neon.tech) |
+| Groq API | [console.groq.com](https://console.groq.com) |
+| OpenWeatherMap | [openweathermap.org/api](https://openweathermap.org/api) |
+| Alpha Vantage | [alphavantage.co](https://www.alphavantage.co/support/#api-key) |
+| Google OAuth | [Google Cloud Console](https://console.cloud.google.com/apis/credentials) |
+| GitHub OAuth | [GitHub Developer Settings](https://github.com/settings/developers) |
 
 ## 🌐 Deployment (Vercel)
 
-### 1. Push to GitHub
-```bash
-git add .
-git commit -m "Ready for deployment"
-git push origin main
-```
+1. Push your code to GitHub
 
-### 2. Deploy to Vercel
-1. Go to [vercel.com](https://vercel.com) and import your repository
-2. Add all environment variables from `.env.local`
-3. Deploy!
+2. Import project on [Vercel](https://vercel.com)
 
-### 3. Update OAuth Redirect URLs
-After deployment, update your OAuth apps:
-- **Google**: Add `https://your-app.vercel.app/api/auth/callback/google`
-- **GitHub**: Add `https://your-app.vercel.app/api/auth/callback/github`
+3. Add all environment variables in Vercel dashboard
+
+4. **Update OAuth callback URLs**:
+   - Google: `https://your-app.vercel.app/api/auth/callback/google`
+   - GitHub: `https://your-app.vercel.app/api/auth/callback/github`
+
+5. Deploy!
 
 ## 📁 Project Structure
 
@@ -128,43 +147,53 @@ After deployment, update your OAuth apps:
 ai-assistant/
 ├── src/
 │   ├── app/
-│   │   ├── (protected)/      # Auth-protected routes
-│   │   │   └── chat/         # Chat pages
-│   │   ├── api/
-│   │   │   ├── auth/         # NextAuth API routes
-│   │   │   └── chat/         # AI chat endpoint
-│   │   └── login/            # Login page
+│   │   ├── (protected)/chat/    # Chat pages (auth required)
+│   │   ├── api/                 # API routes
+│   │   └── login/               # Login page
 │   ├── components/
-│   │   ├── chat/             # Chat interface components
-│   │   └── ui/               # shadcn/ui components
-│   ├── db/                   # Database schema & config
-│   └── lib/                  # Auth config & AI tools
-├── drizzle.config.ts
+│   │   ├── chat/                # Chat components
+│   │   ├── auth/                # Auth components
+│   │   └── ui/                  # Shadcn UI components
+│   ├── db/                      # Database schema
+│   └── lib/                     # Utilities & AI tools
+├── drizzle.config.ts            # Drizzle configuration
 └── package.json
 ```
 
-## 📝 Available Scripts
+## 💬 Usage Examples
+
+**Weather:**
+> "What's the weather in Tokyo?"
+
+**Stocks:**
+> "Check the stock price of AAPL"
+
+**F1:**
+> "When is the next F1 race?"
+
+## 📝 Scripts
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start development server |
 | `npm run build` | Build for production |
 | `npm run start` | Start production server |
-| `npm run db:push` | Push schema to database |
-| `npm run db:studio` | Open Drizzle Studio |
+| `npm run lint` | Run ESLint |
+| `npx drizzle-kit push` | Push schema to database |
+| `npx drizzle-kit studio` | Open Drizzle Studio |
 
-## 🎯 Usage Examples
+## 🤝 Contributing
 
-Try these prompts with the AI:
-- "What's the weather in New York?"
-- "What's the Apple stock price?"
-- "When is the next F1 race?"
-- "How's the weather in Tokyo?"
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing`)
+5. Open a Pull Request
 
 ## 📄 License
 
-MIT License - feel free to use this project for learning or commercial purposes.
+MIT License - feel free to use this project!
 
 ---
 
-Built with ❤️ using Next.js and Vercel AI SDK
+Made with ❤️ by [Tushar Minche](https://github.com/TusharMinche)

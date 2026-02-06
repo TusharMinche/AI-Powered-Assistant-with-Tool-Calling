@@ -48,10 +48,17 @@ export function ChatSidebar({ currentConversationId, onClose }: ChatSidebarProps
         try {
             const result = await createConversation();
             if (result?.id) {
-                // Navigate first, then reload in background
+                // Optimistically add to conversation list
+                setConversations(prev => [{
+                    id: result.id,
+                    title: "New Chat",
+                    userId: "",
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                }, ...prev]);
+                // Navigate to new chat
                 router.push(`/chat/${result.id}`);
                 onClose?.();
-                loadConversations(); // Don't await - let it run in background
             }
         } catch (error) {
             console.error("Failed to create conversation:", error);
