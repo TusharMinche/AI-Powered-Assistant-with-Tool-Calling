@@ -34,7 +34,7 @@ An intelligent chat assistant with tool calling capabilities, built with Next.js
 
 
 ### Mobile View
-![WhatsApp Image 2026-02-06 at 22 47 48](https://github.com/user-attachments/assets/4d0c6791-9865-48b0-be6e-ab1975ca2a51)
+<img src="https://github.com/user-attachments/assets/4d0c6791-9865-48b0-be6e-ab1975ca2a51" alt="Mobile View" width="300">
 
 
 ## 🚀 Quick Start
