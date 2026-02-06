@@ -189,7 +189,7 @@ export function ChatInterface({
         <div className="flex flex-col h-full bg-neutral-950">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4">
-                <div className="max-w-2xl mx-auto py-6 space-y-4">
+                <div className="max-w-4xl mx-auto py-6 space-y-4">
                     {/* Empty state */}
                     {messages.length === 0 && (
                         <div className="flex items-center justify-center pt-20">
@@ -217,16 +217,22 @@ export function ChatInterface({
 
                         if (m.role === "user") {
                             return (
-                                <div key={m.id} className="flex justify-end">
+                                <div key={m.id} className="flex justify-end gap-3">
                                     <div className="max-w-[80%] px-4 py-2 rounded-lg bg-blue-600 text-white">
                                         <p className="text-sm whitespace-pre-wrap">{m.content}</p>
+                                    </div>
+                                    <div className="w-8 h-8 rounded-full bg-neutral-700 flex items-center justify-center text-lg shrink-0">
+                                        👤
                                     </div>
                                 </div>
                             );
                         }
 
                         return (
-                            <div key={m.id} className="flex justify-start">
+                            <div key={m.id} className="flex justify-start gap-3">
+                                <div className="w-8 h-8 rounded-full bg-neutral-700 flex items-center justify-center text-lg shrink-0">
+                                    🤖
+                                </div>
                                 <div className="max-w-[80%]">
                                     {hasText && (
                                         <div className="px-4 py-2 rounded-lg bg-neutral-800 text-neutral-200">
@@ -259,7 +265,10 @@ export function ChatInterface({
                     })}
 
                     {isLoading && messages[messages.length - 1]?.role === "user" && (
-                        <div className="flex justify-start">
+                        <div className="flex justify-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-neutral-700 flex items-center justify-center text-lg shrink-0">
+                                🤖
+                            </div>
                             <div className="px-4 py-2 bg-neutral-800 rounded-lg">
                                 <div className="flex gap-1">
                                     <span className="w-2 h-2 bg-neutral-500 rounded-full animate-bounce" />
